@@ -1,0 +1,340 @@
+Program.Sub.ScreenSU.Start
+gui.F_IssueFlex..create
+gui.F_IssueFlex..caption("Issue Material to Flex Schedule")
+gui.F_IssueFlex..size(4455,1830)
+gui.F_IssueFlex..position(0,0)
+gui.F_IssueFlex..event(unload,f_issueflex_unload)
+gui.F_IssueFlex..alwaysontop(False)
+gui.F_IssueFlex..fontname("Arial")
+gui.F_IssueFlex..fontsize(8)
+gui.F_IssueFlex..forecolor(0)
+gui.F_IssueFlex..fontstyle(,,,,)
+gui.F_IssueFlex..BackColor(-2147483633)
+gui.F_IssueFlex..controlbox(True)
+gui.F_IssueFlex..maxbutton(True)
+gui.F_IssueFlex..minbutton(True)
+gui.F_IssueFlex..mousepointer(0)
+gui.F_IssueFlex..moveable(True)
+gui.F_IssueFlex..sizeable(True)
+gui.F_IssueFlex..ShowInTaskBar(True)
+gui.F_IssueFlex..titlebar(True)
+gui.F_IssueFlex.txtSched.create(textbox,"",True,1215,300,0,200,400,True,0,Arial,8,-2147483643,1)
+gui.F_IssueFlex.txtSfx.create(textbox,"",True,570,300,0,1500,400,True,0,Arial,8,-2147483643,1)
+gui.F_IssueFlex.txtSfx.event(lostfocus,txtsfx_lostfocus)
+gui.F_IssueFlex.cmdFlexbrw.create(button)
+gui.F_IssueFlex.cmdFlexbrw.caption("^")
+gui.F_IssueFlex.cmdFlexbrw.visible(True)
+gui.F_IssueFlex.cmdFlexbrw.size(300,300)
+gui.F_IssueFlex.cmdFlexbrw.zorder(0)
+gui.F_IssueFlex.cmdFlexbrw.position(2200,400)
+gui.F_IssueFlex.cmdFlexbrw.enabled(True)
+gui.F_IssueFlex.cmdFlexbrw.fontname("Arial")
+gui.F_IssueFlex.cmdFlexbrw.fontsize(8)
+gui.F_IssueFlex.cmdFlexbrw.event(click,cmdflexbrw_click)
+gui.F_IssueFlex.lbl1.create(label,"Schedule",True,1155,255,1,200,200,True,0,Arial,8,-2147483633,0)
+gui.F_IssueFlex.lbl2.create(label,"Suffix",True,555,255,1,1500,200,True,0,Arial,8,-2147483633,0)
+gui.F_IssueFlex.cmdIssue.create(button)
+gui.F_IssueFlex.cmdIssue.caption("Issue")
+gui.F_IssueFlex.cmdIssue.visible(True)
+gui.F_IssueFlex.cmdIssue.size(945,375)
+gui.F_IssueFlex.cmdIssue.zorder(0)
+gui.F_IssueFlex.cmdIssue.position(200,800)
+gui.F_IssueFlex.cmdIssue.enabled(False)
+gui.F_IssueFlex.cmdIssue.fontname("Arial")
+gui.F_IssueFlex.cmdIssue.fontsize(8)
+gui.F_IssueFlex.cmdIssue.event(click,cmdissue_click)
+gui.F_IssueFlex.txtMat.create(textbox,"0.0",True,1200,300,0,2800,400,False,1,Arial,8,-2147483643,1)
+gui.F_IssueFlex.txtMat.numericonly(1)
+gui.F_IssueFlex.txtMat.event(gotfocus,txtmat_gotfocus)
+gui.F_IssueFlex.lbl3.create(label,"Quantity to Issue",True,1260,255,1,2800,200,True,0,Arial,8,-2147483633,0)
+gui.F_IssueFlex.txtSched.tabstop(True)
+gui.F_IssueFlex.txtSched.tabindex(1)
+gui.F_IssueFlex.txtSfx.tabstop(True)
+gui.F_IssueFlex.txtSfx.tabindex(2)
+gui.F_IssueFlex.txtMat.tabstop(True)
+gui.F_IssueFlex.txtMat.tabindex(3)
+gui.F_IssueFlex.cmdIssue.tabstop(True)
+gui.F_IssueFlex.cmdIssue.tabindex(4)
+gui.F_IssueFlex.cmdFlexbrw.tabstop(True)
+gui.F_IssueFlex.cmdFlexbrw.tabindex(5)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.Job.Define("Job",String)
+Variable.UDT.Job.Define("Sfx",String)
+Variable.UDT.Job.Define("Seq",String)
+Variable.UDT.Job.Define("Part",String)
+Variable.UDT.Job.Define("Pct",Float)
+Variable.UDT.Job.Define("UnitsOrig",Float)
+Variable.UDT.Job.Define("UnitsOpen",Float)
+Variable.UDT.Job.Define("Router",String)
+Variable.UDT.Job.Define("IssueQty",Float)
+Variable.uGlobal.uJ.Declare("Job")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: ANS
+'Project Start Date: 3/7/2011
+'Hooks:
+'  28831 - Script 1, 28810 - Populate
+
+
+F.Intrinsic.Control.If(V.Caller.Hook,=,28810)
+	V.Passed.000261.Set("Issue to Flex")
+	F.Intrinsic.Control.end
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+Gui.F_IssueFlex..Show
+Gui.F_IssueFlex.txtSched.SetFocus
+
+Program.Sub.Main.End
+
+program.sub.f_issueflex_unload.start
+F.Intrinsic.Control.If(V.ODBC.con.State,=,1)
+	F.ODBC.connection!con.close
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.End
+
+program.sub.f_issueflex_unload.end
+
+program.sub.cmdflexbrw_click.start
+Variable.local.sRet.Declare(String)
+Variable.local.sTitles.Declare(String)
+Variable.local.iWidths.Declare(Long)
+
+Function.intrinsic.string.split("Schedule*!*Suffix*!*From Date*!*To Date","*!*",Variable.local.sTitles)
+Function.intrinsic.string.split("1000*!*800*!*1000*!*1000","*!*",Variable.local.iWidths)
+Function.intrinsic.ui.browser("Select a flex schedule",con,"Select Distinct Schedule, Schedule_Suffix, Date_Sched_From, Date_Sched_To From V_JOB_CT_FLX_SCHD order by Schedule, Schedule_Suffix, Date_Sched_From, Date_Sched_To",V.local.sTitles,V.local.iWidths,V.local.sRet)
+Function.intrinsic.control.if(Variable.local.sRet,"=","***CANCEL***")
+	Gui.F_IssueFlex.txtSched.Text("")
+	Gui.F_IssueFlex.txtSfx.Text("")
+	Gui.F_IssueFlex.txtMat.Enabled(False)
+	Gui.F_IssueFlex.cmdIssue.Enabled(False)
+	Gui.F_IssueFlex.txtSched.SetFocus
+	'Gui.F_IssueFlex.txtPart.Enabled(False)
+	'Gui.F_IssueFlex.txtRev.Enabled(False)
+	'Gui.F_IssueFlex.cmdPartBrw.Enabled(False)
+Function.intrinsic.control.else
+	Function.intrinsic.string.split(Variable.local.sRet,"*!*",Variable.local.sRet)
+	Gui.F_IssueFlex.txtSched.Text(V.Local.sRet(0))
+	Gui.F_IssueFlex.txtSfx.Text(V.Local.sRet(1))
+	Gui.F_IssueFlex.txtMat.Enabled(True)
+	Gui.F_IssueFlex.cmdIssue.Enabled(True)
+	Gui.F_IssueFlex.txtMat.setfocus
+	'Gui.F_IssueFlex.txtPart.Enabled(True)
+	'Gui.F_IssueFlex.txtRev.Enabled(True)
+	'Gui.F_IssueFlex.cmdPartBrw.Enabled(True)
+Function.intrinsic.control.endif
+Gui.F_IssueFlex.txtMat.Text("0.0")
+
+program.sub.cmdflexbrw_click.end
+
+program.sub.cmdissue_click.start
+V.Local.fUnitsOrig.Declare(Float)
+V.Local.sSQL.Declare(String)
+V.Local.sJob.Declare(String)
+V.Local.fPct.Declare(Float)
+V.Local.iUB.Declare(Long)
+V.Local.i.Declare(Long)
+V.Local.sTemp.Declare(String)
+V.Local.sText.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.sLeft.Declare(String)
+V.Local.iPos.Declare(Long)
+V.Local.fTotal.Declare(Float)
+V.Local.sSfx.Declare(String)
+V.Local.sFlex.Declare(String)
+V.Local.sPartOnhand.Declare(String)
+
+V.uGlobal.uJ.Redim(-1,-1)
+F.Intrinsic.Control.If(V.Screen.F_IssueFlex!txtMat.Text,<=,0)
+	F.Intrinsic.UI.Msgbox("The quantity to issue must be greater than 0.")
+	Gui.F_IssueFlex.txtMat.SetFocus
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub("CheckPart")
+V.Local.sPart.Set(V.Args.sPart)
+F.Intrinsic.Control.If(V.Args.bReturn,=,True)
+	F.Intrinsic.UI.Msgbox("More than one part was found on the jobs in the selected flex schedule.")
+	Gui.F_IssueFlex.txtMat.Text("0.0")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.If(V.Args.bSeqClosed,=,True)
+	F.Intrinsic.UI.Msgbox("At least one job material sequence is closed.")
+	Gui.F_IssueFlex.txtMat.Text("0.0")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+'Check part onhand compared to issue quantity
+F.Intrinsic.String.Concat("select PART,QTY_ONHAND from V_INVENTORY_MSTR where Part='",V.Local.sPart,"'",V.Local.sSQL)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSQL)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+	V.Local.sPartOnhand.Set(V.ODBC.Con!rstSel.FieldValTrim!QTY_ONHAND)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+F.Intrinsic.Control.If(V.Screen.F_IssueFlex!txtMat.Text,>,V.Local.sPartOnhand)
+	F.Intrinsic.UI.Msgbox("Issue qty > onhand balance.  No issue was made.")
+	Gui.F_IssueFlex.txtMat.SetFocus
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+
+F.Intrinsic.String.LPad(V.Screen.F_IssueFlex!txtSched.Text,"0",6,V.Local.sFlex)
+F.Intrinsic.String.LPad(V.Screen.F_IssueFlex!txtSfx.Text,"0",3,V.Local.sSfx)
+
+F.Intrinsic.String.Concat("Select Matl_Job, Matl_Suffix, Matl_Seq, Lab_Wo_Part from Job_Ct_Flx_Schd where Schedule='",V.Local.sFlex,"' and Schedule_Suffix='",V.Local.sSfx,"'",V.Local.sSQL)
+F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSQL)
+F.Intrinsic.Control.DoUntil(V.ODBC.con!rst.EOF,=,True)
+	F.Intrinsic.String.Concat("Select Part, Units, Hours_Estimated, Hours_Actual from Job_Operations where Job='",V.ODBC.con!rst.FieldVal!Matl_Job,"' and Suffix='",V.ODBC.con!rst.FieldVal!Matl_Suffix,"' and Seq='",V.ODBC.con!rst.FieldVal!Matl_Seq,"' and flag_Closed<>'Y'",V.Local.sSQL)
+	F.ODBC.Connection!con.OpenRecordsetRO("rstJ",V.Local.sSQL)
+	F.Intrinsic.Control.If(V.ODBC.con!rstJ.EOF,=,False)
+		F.Intrinsic.Math.Add(V.uGlobal.uJ.UBound,1,V.Local.iUB)
+		F.Intrinsic.Control.If(V.Local.iUB,=,0)
+			V.uGlobal.uJ.Redim(0,0)
+		F.Intrinsic.Control.Else
+			V.uGlobal.uJ.RedimPreserve(0,V.Local.iUB)
+		F.Intrinsic.Control.EndIf
+		V.uGlobal.uJ(v.Local.iUB)!Job.Set(V.ODBC.con!rst.FieldVal!Matl_Job)
+		V.uGlobal.uJ(v.Local.iUB)!Sfx.Set(V.ODBC.con!rst.FieldVal!Matl_Suffix)
+		V.uGlobal.uJ(v.Local.iUB)!Seq.Set(V.ODBC.con!rst.FieldVal!Matl_Seq)
+		V.uGlobal.uJ(v.Local.iUB)!Router.Set(V.ODBC.con!rst.FieldVal!Lab_Wo_Part)
+		V.uGlobal.uJ(v.Local.iUB)!Part.Set(V.ODBC.con!rstJ.FieldVal!Part)
+		F.Intrinsic.Math.Sub(V.ODBC.con!rstJ.FieldVal!Hours_Estimated,V.ODBC.con!rstJ.FieldVal!Hours_Actual,V.uGlobal.uJ(v.Local.iUB)!UnitsOpen)
+		F.Intrinsic.Control.If(V.uGlobal.uJ(v.Local.iUB)!UnitsOpen,>=,0)
+			F.Intrinsic.Math.Add(V.Local.fTotal,V.uGlobal.uJ(v.Local.iUB)!UnitsOpen,V.Local.fTotal)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Endif
+	F.ODBC.con!rstJ.Close
+	F.ODBC.con!rst.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.con!rst.Close
+
+V.Local.iUB.Set(V.uGlobal.uJ.UBound)
+F.Intrinsic.Control.For(V.Local.i,0,V.Local.iUB,1)
+	F.Intrinsic.Control.If(V.uGlobal.uJ(v.Local.i)!UnitsOpen,>=,0)
+		F.Intrinsic.Math.Div(V.uGlobal.uJ(v.Local.i)!UnitsOpen,V.Local.fTotal,V.uGlobal.uJ(v.Local.i)!Pct)
+		F.Intrinsic.Math.Mult(V.uGlobal.uJ(v.Local.i)!Pct,V.Screen.F_IssueFlex!txtMat.Text,V.uGlobal.uJ(v.Local.i)!IssueQty)
+		F.Intrinsic.String.Format(V.uGlobal.uJ(v.Local.i)!IssueQty,"0.0000",V.local.sTemp)
+		F.Intrinsic.String.Concat(V.uGlobal.uJ(v.Local.i)!Part,",,,",V.Local.sTemp,",,,,,",V.uGlobal.uJ(v.Local.i)!Job,",",V.uGlobal.uJ(v.Local.i)!Sfx,",",V.uGlobal.uJ(v.Local.i)!Seq,V.Local.sText)
+		F.Intrinsic.String.Concat("I",V.Caller.CompanyCode,"IF",V.uGlobal.uJ(v.Local.i)!Job,V.Local.sTemp)
+		F.Intrinsic.String.Concat(V.Caller.FilesDir,"\",V.Local.stemp,V.Local.sFile)
+		F.Intrinsic.file.String2File(V.Local.sFile,V.Local.sText)
+		'F.Intrinsic.Debug.InvokeDebugger
+		'F.Intrinsic.Debug.Stop
+		F.Global.General.CallWrapperSync(450100,V.Local.sTemp)
+		
+		'F.Global.General.CallWrapperSync(450100,V.Local.sFile)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.uGlobal.uJ(v.Local.i)!UnitsOpen,<=,0)
+	F.Intrinsic.UI.Msgbox("No open material seq qty, nothing will be issued to job.")
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.i)
+
+F.Intrinsic.Control.CallSub("F_IssueFlex_Unload")
+
+program.sub.cmdissue_click.end
+
+Program.Sub.CheckPart.Start
+V.Local.sSQL.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.bPartNotSame.Declare(Boolean)
+V.Local.bSeqClosed.Declare(Boolean)
+
+'F.Intrinsic.String.RPad(V.Screen.F_IssueFlex!txtPart.Text," ",20,V.Local.sPart)
+'V.Local.sPart.Set(V.Screen.F_IssueFlex!txtPart.Text)
+'F.Intrinsic.String.Concat(V.Local.sPart,V.Screen.F_IssueFlex!txtRev.Text,V.Local.sPart)
+F.Intrinsic.String.Concat("Select Distinct Matl_Job, Matl_Suffix, Matl_Seq from Job_Ct_Flx_Schd where Schedule='",V.Screen.F_IssueFlex!txtSched.Text,"' and Schedule_Suffix='",V.Screen.F_IssueFlex!txtSfx.Text,"'",V.Local.sSQL)
+F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSQL)
+F.Intrinsic.Control.DoUntil(V.ODBC.con!rst.EOF,=,True)
+	V.Local.bPartNotSame.Set(False)
+	F.Intrinsic.String.Concat("Select Part, Flag_Closed from Job_Operations where Job='",V.ODBC.con!rst.FieldVal!Matl_Job,"' and Suffix='",V.ODBC.con!rst.FieldVal!Matl_Suffix,"' and Seq='",V.ODBC.con!rst.FieldVal!Matl_Seq,"' and LMO='M'",V.Local.sSQL)
+	F.ODBC.Connection!con.OpenRecordsetRO("rstP",V.Local.sSQL)
+	F.Intrinsic.Debug.Stop
+	F.Intrinsic.Control.If(V.ODBC.con!rstP.EOF,=,False)
+               F.Intrinsic.Control.If(V.ODBC.con!rstP.FieldVal!Flag_Closed,=,"Y")
+			V.Local.bSeqClosed.Set(True)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sPart,=,"")
+			V.Local.sPart.Set(V.ODBC.con!rstP.FieldVal!Part)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.ODBC.con!rstP.FieldVal!Part,<>,V.Local.sPart)
+			V.Local.bPartNotSame.set(True)
+		F.Intrinsic.Control.EndIf
+		F.ODBC.con!rstP.MoveNext
+	F.Intrinsic.Control.endif
+	F.ODBC.con!rstP.close
+	F.Intrinsic.Control.If(V.Local.bPartNotSame,=,True)
+		F.Intrinsic.Variable.AddRV("bReturn",True)
+		F.intrinsic.Variable.AddRV("sPart",V.Local.sPart)
+		F.Intrinsic.Variable.AddRV("bSeqClosed",V.Local.bSeqClosed)
+		F.ODBC.con!rst.close
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.ODBC.con!rst.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.con!rst.Close
+
+F.Intrinsic.Variable.AddRV("bReturn",False)
+F.Intrinsic.Variable.AddRV("sPart",V.Local.sPart)
+F.Intrinsic.Variable.AddRV("bSeqClosed",V.Local.bSeqClosed)
+
+
+Program.Sub.CheckPart.End
+
+program.sub.cmdpartbrw_click.start
+Variable.local.sRet.Declare(String)
+
+Function.intrinsic.ui.browser(100,"",V.local.sRet)
+Function.intrinsic.control.if(Variable.local.sRet,"=","***CANCEL***")
+	Gui.F_IssueFlex.txtPart.Text("")
+	Gui.F_IssueFlex.txtRev.Text("")
+	Gui.F_IssueFlex.txtMat.Enabled(False)
+	Gui.F_IssueFlex.cmdIssue.Enabled(False)
+Function.intrinsic.control.else
+	Function.intrinsic.string.split(Variable.local.sRet,"*!*",Variable.local.sRet)
+	Gui.F_IssueFlex.txtPart.Text(V.Local.sRet(0))
+	Gui.F_IssueFlex.txtRev.Text(V.Local.sRet(1))
+	Gui.F_IssueFlex.txtMat.Enabled(True)
+	Gui.F_IssueFlex.cmdIssue.Enabled(True)
+Function.intrinsic.control.endif
+Gui.F_IssueFlex.txtMat.Text("0.0")
+
+F.Intrinsic.Control.CallSub("CheckPart")
+F.Intrinsic.Control.If(V.Args.bReturn,=,False)
+	F.Intrinsic.UI.Msgbox("The selected part is not found on any job in the flex schedule.")
+	Gui.F_IssueFlex.txtPart.Text("")
+	Gui.F_IssueFlex.txtRev.Text("")
+	Gui.F_IssueFlex.txtMat.Text("0.0")
+F.Intrinsic.Control.EndIf
+
+program.sub.cmdpartbrw_click.end
+
+program.sub.txtsfx_lostfocus.start
+F.Intrinsic.Control.If(V.Screen.F_IssueFlex!txtSched.Text,<>,"")
+	Gui.F_IssueFlex.txtMat.Enabled(True)
+	Gui.F_IssueFlex.cmdIssue.Enabled(True)
+	Gui.F_IssueFlex.txtMat.SelectAll
+F.Intrinsic.Control.Else
+	Gui.F_IssueFlex.txtMat.Enabled(False)
+	Gui.F_IssueFlex.cmdIssue.Enabled(False)
+F.Intrinsic.Control.EndIf
+Gui.F_IssueFlex.txtMat.Text("0.0")
+
+program.sub.txtsfx_lostfocus.end
+
+program.sub.txtmat_gotfocus.start
+gui.F_IssueFlex.txtMat.SelectAll
+
+program.sub.txtmat_gotfocus.end
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$bpham$}$20210414113701469$}$Di0riF4Q5RIv6jxva5zSWDOOsXP37NsotB+n8+OvZsJAe3Fk9E73BvIo1XM2oOo4G3efOnvLVgc=
+Program.Sub.Comments.End
